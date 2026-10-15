@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logic Gate Simulator</title>
+  <style>
+    :root { --bg:#0b1220; --panel:#131e31; --panel2:#18263d; --text:#edf4ff; --muted:#9fb0c9; --blue:#54a8ff; --green:#38d996; --red:#ff687d; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Arial,Helvetica,sans-serif; color:var(--text); background:radial-gradient(circle at top,#172b49 0,#0b1220 48%,#070c15 100%); min-height:100vh; }
+    header { padding:28px 18px 18px; text-align:center; }
+    header .tag { display:inline-block; color:#9bd0ff; background:#1b3555; border:1px solid #31577f; border-radius:99px; padding:6px 12px; font-size:12px; letter-spacing:1px; text-transform:uppercase; }
+    h1 { margin:14px 0 8px; font-size:clamp(28px,5vw,42px); }
+    header p { color:var(--muted); margin:0 auto; max-width:650px; line-height:1.5; }
+    main { width:min(1050px,92%); margin:20px auto 45px; display:grid; gap:18px; grid-template-columns: minmax(0,1.05fr) minmax(0,1fr); }
+    .panel { background:linear-gradient(145deg,rgba(24,38,61,.96),rgba(15,25,42,.98)); border:1px solid #2a3c58; border-radius:18px; padding:22px; box-shadow:0 14px 40px #0003; }
+    .panel h2 { margin:0 0 16px; font-size:19px; }
+    .sub { color:var(--muted); font-size:13px; margin-top:-8px; margin-bottom:18px; line-height:1.45; }
+    .gate-list { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:9px; }
+    button, select { font:inherit; }
+    .gate-btn { color:#dceaff; background:#17263c; border:1px solid #354c6c; padding:11px 5px; border-radius:10px; cursor:pointer; transition:.18s ease; }
+    .gate-btn:hover { border-color:var(--blue); transform:translateY(-1px); }
+    .gate-btn.active { color:#061322; background:var(--blue); border-color:var(--blue); font-weight:bold; }
+    .inputs { display:flex; gap:12px; flex-wrap:wrap; margin:16px 0; }
+    .input-card { flex:1; min-width:115px; display:flex; justify-content:space-between; align-items:center; gap:10px; background:#0d1728; border:1px solid #2a3c58; padding:13px; border-radius:12px; }
+    .input-card strong { display:block; }
+    .input-card small { display:block; color:var(--muted); margin-top:4px; }
+    .switch { width:48px; height:27px; border:0; border-radius:30px; background:#42516a; padding:3px; cursor:pointer; flex-shrink:0; transition:.2s; }
+    .switch::after { content:""; display:block; height:21px; width:21px; border-radius:50%; background:white; transition:.2s; }
+    .switch.on { background:var(--green); }
+    .switch.on::after { transform:translateX(21px); }
+    .circuit { display:flex; align-items:center; justify-content:center; gap:15px; padding:22px 8px; min-height:145px; }
+    .wire { height:3px; flex:1; max-width:75px; background:#526985; border-radius:4px; position:relative; }
+    .wire.live { background:var(--green); box-shadow:0 0 10px #38d99688; }
+    .gate-symbol { width:100px; height:70px; display:grid; place-items:center; color:#a9d7ff; border:2px solid #6ebaff; border-radius:12px 35px 35px 12px; background:#132b46; font-weight:bold; box-shadow:0 0 20px #54a8ff18; }
+    .output { text-align:center; background:#0d1728; border:1px solid #2a3c58; border-radius:14px; padding:15px; min-width:100px; }
+    .led { width:24px; height:24px; margin:0 auto 8px; border-radius:50%; background:#35445b; border:2px solid #66758b; transition:.2s; }
+    .led.on { background:var(--green); border-color:#b5ffe0; box-shadow:0 0 18px #38d996aa; }
+    .output strong { font-size:24px; display:block; }
+    .output small { color:var(--muted); }
+    .formula { color:#b9dcff; text-align:center; font-size:18px; margin:0 0 6px; }
+    .result { text-align:center; color:var(--muted); font-size:13px; }
+    .truth { width:100%; border-collapse:collapse; overflow:hidden; border-radius:10px; margin-top:12px; }
+    .truth th,.truth td { padding:10px; text-align:center; border-bottom:1px solid #293a54; }
+    .truth th { background:#1c2e49; color:#c6e3ff; }
+    .truth tr.current { background:#143c36; color:#c9ffe9; font-weight:bold; }
+    .truth tr:last-child td { border-bottom:0; }
+    .info-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .info { background:#0d1728; border:1px solid #293a54; border-radius:11px; padding:12px; }
+    .info strong { display:block; color:#a9d7ff; margin-bottom:5px; }
+    .info span { color:var(--muted); font-size:12px; line-height:1.4; }
+    footer { text-align:center; color:#72849f; font-size:12px; padding:0 18px 25px; }
+    @media(max-width:760px) { main { grid-template-columns:1fr; } .gate-list { grid-template-columns:repeat(4,1fr); } .panel { padding:17px; } .info-grid { grid-template-columns:1fr; } }
+    @media(max-width:390px) { .gate-list { grid-template-columns:repeat(2,1fr); } .circuit { gap:7px; } .gate-symbol { width:75px; } .output { min-width:76px; padding:10px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="tag">Digital Electronics • Mini Project</span>
+    <h1>Logic Gate Simulator</h1>
+    <p>Explore digital logic by switching inputs, watching the output LED, and checking the truth table in real time.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>01 / Choose a logic gate</h2>
+      <p class="sub">Select a gate to test its behaviour. The simulator updates automatically.</p>
+      <div class="gate-list" id="gateList">
+        <button class="gate-btn active" data-gate="AND">AND</button>
+        <button class="gate-btn" data-gate="OR">OR</button>
+        <button class="gate-btn" data-gate="NOT">NOT</button>
+        <button class="gate-btn" data-gate="NAND">NAND</button>
+        <button class="gate-btn" data-gate="NOR">NOR</button>
+        <button class="gate-btn" data-gate="XOR">XOR</button>
+        <button class="gate-btn" data-gate="XNOR">XNOR</button>
+      </div>
+      <h2 style="margin-top:24px">02 / Input switches</h2>
+      <p class="sub">Click a switch to change its binary value between 0 and 1.</p>
+      <div class="inputs">
+        <div class="input-card"><div><strong>Input A</strong><small id="aLabel">Value: 0</small></div><button class="switch" id="switchA" aria-label="Toggle input A" aria-pressed="false"></button></div>
+        <div class="input-card" id="inputBCard"><div><strong>Input B</strong><small id="bLabel">Value: 0</small></div><button class="switch" id="switchB" aria-label="Toggle input B" aria-pressed="false"></button></div>
+      </div>
+      <div class="circuit" aria-label="Logic gate circuit visualization">
+        <div class="wire" id="wireA"></div>
+        <div class="gate-symbol" id="gateSymbol">AND</div>
+        <div class="wire" id="wireOut"></div>
+        <div class="output"><div class="led" id="led"></div><strong id="outputValue">0</strong><small>Output Y</small></div>
+      </div>
+      <p class="formula" id="formula">Y = A AND B</p>
+      <p class="result" id="resultText">Output is LOW (0)</p>
+    </section>
+    <section class="panel">
+      <h2>03 / Truth table</h2>
+      <p class="sub">The highlighted row matches your current input switches.</p>
+      <table class="truth">
+        <thead><tr><th>Input A</th><th id="headB">Input B</th><th>Output Y</th></tr></thead>
+        <tbody id="truthBody"></tbody>
+      </table>
+      <h2 style="margin-top:26px">04 / Gate quick guide</h2>
+      <div class="info-grid">
+        <div class="info"><strong>AND</strong><span>Output is 1 only when both inputs are 1.</span></div>
+        <div class="info"><strong>OR</strong><span>Output is 1 when at least one input is 1.</span></div>
+        <div class="info"><strong>NOT</strong><span>Reverses the input: 0 becomes 1, and 1 becomes 0.</span></div>
+        <div class="info"><strong>NAND / NOR</strong><span>These give the opposite output of AND / OR.</span></div>
+        <div class="info"><strong>XOR</strong><span>Output is 1 when the two inputs are different.</span></div>
+        <div class="info"><strong>XNOR</strong><span>Output is 1 when the two inputs are the same.</span></div>
+      </div>
+    </section>
+  </main>
+  <footer>Made with HTML, CSS and JavaScript • Logic Gate Simulator Mini Project</footer>
+  <script>
+    const gates = {
+      AND: { formula: "Y = A AND B", fn: (a,b) => a && b },
+      OR: { formula: "Y = A OR B", fn: (a,b) => a || b },
+      NOT: { formula: "Y = NOT A", fn: (a,b) => !a, unary: true },
+      NAND: { formula: "Y = NOT (A AND B)", fn: (a,b) => !(a && b) },
+      NOR: { formula: "Y = NOT (A OR B)", fn: (a,b) => !(a || b) },
+      XOR: { formula: "Y = A XOR B", fn: (a,b) => a !== b },
+      XNOR: { formula: "Y = NOT (A XOR B)", fn: (a,b) => a === b }
+    };
+    let selectedGate = "AND";
+    let inputA = false, inputB = false;
+    const $ = id => document.getElementById(id);
+    $("gateList").addEventListener("click", e => {
+      const btn = e.target.closest("[data-gate]");
+      if (!btn) return;
+      selectedGate = btn.dataset.gate;
+      document.querySelectorAll(".gate-btn").forEach(b => b.classList.toggle("active", b === btn));
+      render();
+    });
+    $("switchA").addEventListener("click", () => { inputA = !inputA; render(); });
+    $("switchB").addEventListener("click", () => { inputB = !inputB; render(); });
+    function outputFor(a,b) { return Number(gates[selectedGate].fn(a,b)); }
+    function render() {
+      const unary = gates[selectedGate].unary;
+      $("inputBCard").style.opacity = unary ? ".35" : "1";
+      $("switchB").disabled = unary;
+      $("switchB").style.cursor = unary ? "not-allowed" : "pointer";
+      $("headB").textContent = unary ? "—" : "Input B";
+      $("aLabel").textContent = "Value: " + Number(inputA);
+      $("bLabel").textContent = unary ? "Not used" : "Value: " + Number(inputB);
+      $("switchA").classList.toggle("on", inputA);
+      $("switchB").classList.toggle("on", inputB);
+      $("switchA").setAttribute("aria-pressed", String(inputA));
+      $("switchB").setAttribute("aria-pressed", String(inputB));
+      const output = outputFor(inputA,inputB);
+      $("gateSymbol").textContent = selectedGate;
+      $("formula").textContent = gates[selectedGate].formula;
+      $("outputValue").textContent = output;
+      $("led").classList.toggle("on", Boolean(output));
+      $("resultText").textContent = output ? "Output is HIGH (1)" : "Output is LOW (0)";
+      $("wireA").classList.toggle("live", inputA);
+      $("wireOut").classList.toggle("live", Boolean(output));
+      const rows = unary ? [[0,0],[1,0]] : [[0,0],[0,1],[1,0],[1,1]];
+      $("truthBody").innerHTML = rows.map(([a,b]) => {
+        const y = outputFor(Boolean(a),Boolean(b));
+        const current = a === Number(inputA) && (unary || b === Number(inputB));
+        return `<tr class="${current ? "current" : ""}"><td>${a}</td><td>${unary ? "—" : b}</td><td>${y}</td></tr>`;
+      }).join("");
+    }
+    render();
+  </script>
+</body>
+</html>
